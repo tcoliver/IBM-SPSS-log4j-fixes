@@ -1,0 +1,80 @@
+#!/bin/bash
+
+TEMP_DIR="/tmp/spss_fix_log4j"
+FIX_FILES="${TEMP_DIR}/fix_files/"
+
+cleanup() {
+ rm -rf "${TEMP_DIR}"
+}
+
+trap cleanup EXIT
+
+SPSS_APP_BUNDLE=$(find -E /Applications -regex ".*/SPSS ?Statistics\.app")
+SPSS_MAJOR_VERSION=$(xmllint --xpath "/plist/dict/key[text()='CFBundleVersion']/following-sibling::string[1]/text()" "${SPSS_APP_BUNDLE}/Contents/Info.plist" | tr -d " ")
+
+fix28() {
+  BIN_DIR="${SPSS_APP_BUNDLE}/Contents/bin"
+  LIB_DIR="${SPSS_APP_BUNDLE}/Contents/bin/as-3.3.0.0/lib"
+  rm -f "${BIN_DIR}/log4j-core-2.13.3.jar" "${BIN_DIR}/log4j-api-2.13.3.jar" "${BIN_DIR}/log4j-1.2-api-2.13.3.jar"
+  rm -f "${LIB_DIR}/log4j-core-2.13.3.jar" "${LIB_DIR}/log4j-api-2.13.3.jar"
+  cp -R "${FIX_FILES}" "${BIN_DIR}"
+  cp -R "${FIX_FILES}" "${LIB_DIR}"
+}
+
+fix27() {
+  BIN_DIR="${SPSS_APP_BUNDLE}/Contents/bin"
+  LIB_DIR="${SPSS_APP_BUNDLE}/Contents/bin/as-3.2.3.0/lib"
+  COGNOS_DIR="${SPSS_APP_BUNDLE}/Contents/common/ext/bin/spss.cognos.9"
+  rm -f "${BIN_DIR}/log4j-core-2.13.3.jar" "${BIN_DIR}/log4j-api-2.13.3.jar" "${BIN_DIR}/log4j-1.2-api-2.13.3.jar"
+  rm -f "${LIB_DIR}/log4j-core-2.13.3.jar" "${LIB_DIR}/log4j-api-2.13.3.jar"
+  rm -f "${COGNOS_DIR}/log4j-1.2.17.jar"
+  cp -R "${FIX_FILES}" "${BIN_DIR}"
+  cp -R "${FIX_FILES}" "${LIB_DIR}"
+  cp -R "${FIX_FILES}" "${COGNOS_DIR}"
+}
+
+fix26() {
+  TM1_DIR="${SPSS_APP_BUNDLE}/Contents/common/ext/bin/spss.tm1.9"
+  COGNOS_DIR="${SPSS_APP_BUNDLE}/Contents/common/ext/bin/spss.cognos.9"
+  LIB_DIR="${SPSS_APP_BUNDLE}/Contents/bin/as-3.1.1.0/lib"
+  rm -f "${TM1_DIR}/log4j-1.2.16.jar"
+  rm -f "${COGNOS_DIR}/log4j-1.2.17.jar"
+  rm -f "${LIB_DIR}/com.springsource.org.apache.log4j-1.2.16.jar"
+  cp -R "${FIX_FILES}" "${TM1_DIR}"
+  cp -R "${FIX_FILES}" "${COGNOS_DIR}"
+  cp -R "${FIX_FILES}" "${LIB_DIR}"
+}
+
+fix25() {
+  TM1_DIR="${SPSS_APP_BUNDLE}/Contents/common/ext/bin/spss.tm1.8"
+  COGNOS_DIR="${SPSS_APP_BUNDLE}/Contents/common/ext/bin/spss.cognos.8"
+  LIB_DIR="${SPSS_APP_BUNDLE}/Contents/bin/as-3.1.1.0/lib"
+  PARTY_DIR="${SPSS_APP_BUNDLE}/Contents/bin/as-3.1.0.0/3rdparty"
+  rm -f "${TM1_DIR}/log4j-1.2.16.jar"
+  rm -f "${COGNOS_DIR}/log4j-1.2.17.jar"
+  rm -f "${LIB_DIR}/com.springsource.org.apache.log4j-1.2.16.jar"
+  rm -f "${PARTY_DIR}/com.springsource.org.apache.log4j-1.2.16.jar"
+  cp -R "${FIX_FILES}" "${TM1_DIR}"
+  cp -R "${FIX_FILES}" "${COGNOS_DIR}"
+  cp -R "${FIX_FILES}" "${LIB_DIR}"
+  cp -R "${FIX_FILES}" "${PARTY_DIR}"
+}
+
+case "${SPSS_MAJOR_VERSION}" in
+  28.0.1*)
+    fix28
+    ;;
+  27.0.1*)
+    fix27
+    ;;
+  26.0*)
+    fix26
+    ;;
+  25.0*)
+    fix25
+    ;;
+  *)
+    ;;
+esac
+
+exit 0
