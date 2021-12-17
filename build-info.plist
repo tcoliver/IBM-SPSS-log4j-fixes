@@ -16,6 +16,13 @@
 	<string>none</string>
 	<key>preserve_xattr</key>
 	<false/>
+	<key>signing_info</key>
+	<dict>
+		<key>identity</key>
+		<string>Developer ID Installer: University of North Florida (9Z24UBFL5G)</string>
+		<key>timestamp</key>
+		<true/>
+	</dict>
 	<key>suppress_bundle_relocation</key>
 	<true/>
 	<key>version</key>
