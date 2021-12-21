@@ -8,7 +8,7 @@ There is a prebuilt signed pkg located in the build directory. You can deploy it
 
 ---
 
-Document Source: https://www.ibm.com/support/pages/node/6525830
+Document Source: https://www.ibm.com/support/pages/node/6525830  
 Sourced on: 12/21/21
 
 > # Apache Log4j CVE-2021-44228 vulnerability in IBM SPSS Statistics
