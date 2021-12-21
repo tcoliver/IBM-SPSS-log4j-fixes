@@ -1,80 +1,242 @@
 #!/bin/bash
 
+LOG_FILE="/Library/Logs/install_ibm_spss_statistics_log4j_fix.log"
 TEMP_DIR="/tmp/spss_fix_log4j"
-FIX_FILES="${TEMP_DIR}/fix_files/"
+FIX_FILE_DIR="${TEMP_DIR}/fix_files/"
+FIX_FILES=(
+  "log4j-1.2-api-2.16.0.jar"
+  "log4j-api-2.16.0.jar"
+  "log4j-core-2.16.0.jar"
+)
+OLD_FIX_FILES=(
+      "log4j-1.2-api-2.15.0.jar"
+      "log4j-api-2.15.0.jar"
+      "log4j-core-2.15.0.jar"
+)
+
+function setup_logging() {
+  if [[ ! -e "${LOG_FILE}" ]]; then
+    if ! touch "${LOG_FILE}"; then
+      echo "Failed to make log file"
+    fi
+  fi
+  exec > >(tee -a "${LOG_FILE}") 2>&1
+}
 
 cleanup() {
  rm -rf "${TEMP_DIR}"
 }
 
-trap cleanup EXIT
+remove_previous_fix() {
+  echo "BEGIN: Removing old fix files"
+  for VUL_PATH in "${VUL_PATHS[@]}"; do
+    for OLD_FIX_FILE in "${OLD_FIX_FILES[@]}"; do
+      if [[ -f "${VUL_PATH}${OLD_FIX_FILE}" ]]; then
+        echo -n "Removing \"${VUL_PATH}${OLD_FIX_FILE}\"..."
+        if rm -f "${VUL_PATH}${OLD_FIX_FILE}"; then
+          echo "Done"
+        else
+          echo "Failed"
+        fi
+      fi
+    done
+  done
+  echo "END: Removing old fix files"
+}
 
-SPSS_APP_BUNDLE=$(find -E /Applications -regex ".*/SPSS ?Statistics\.app")
-SPSS_MAJOR_VERSION=$(xmllint --xpath "/plist/dict/key[text()='CFBundleVersion']/following-sibling::string[1]/text()" "${SPSS_APP_BUNDLE}/Contents/Info.plist" | tr -d " ")
+remove_vulnerable_files() {
+  echo "BEGIN: Removing vulnerable files"
+  for VUL_FILE in "${VUL_FILES[@]}"; do
+    if [[ -f "${VUL_FILE}" ]]; then
+      echo -n "Removing \"${VUL_FILE}\"..."
+      if rm -f "${VUL_FILE}"; then
+        echo "Done"
+      else
+        echo "Failed"
+      fi
+    fi
+  done
+  echo "END: Removing vulnerable files"
+}
+
+copy_fix_files() {
+  echo "BEGIN: Copying fix files"
+  for VUL_PATH in "${VUL_PATHS[@]}"; do
+    for FIX_FILE in "${FIX_FILES[@]}"; do
+      echo -n "Copying ${FIX_FILE} to \"${VUL_PATH}\"..."
+      if cp "${FIX_FILE_DIR}${FIX_FILE}" "${VUL_PATH}"; then
+        echo "Done"
+      else
+        echo "Failed"
+      fi
+    done
+  done
+  echo "END: Copying fix files"
+}
+
+old_fix_present() {
+  local OLD_FIX_FOUND="FALSE"
+  echo "BEGIN: Checking for old fix files"
+  for VUL_PATH in "${VUL_PATHS[@]}"; do
+    for OLD_FIX_FILE in "${OLD_FIX_FILES[@]}"; do
+      if [[ -f "${VUL_PATH}${OLD_FIX_FILE}" ]]; then
+        OLD_FIX_FOUND="TRUE"
+        echo "Found \"${VUL_PATH}${OLD_FIX_FILE}\""
+      fi
+    done
+  done
+  echo "END: Checking for old fix files"
+  if [[ "${OLD_FIX_FOUND}" = "TRUE" ]]; then
+    echo "Old fix files found"
+    return 0
+  else
+    return 1
+  fi
+}
+
+vulnerable() {
+  local VULNERABLE="FALSE"
+  echo "BEGIN: Checking if vulnerable"
+  for VUL_FILE in "${VUL_FILES[@]}"; do
+    if [[ -f "${VUL_FILE}" ]]; then
+      VULNERABLE="TRUE"
+      echo "Found \"${VUL_FILE}\""
+    fi
+  done
+
+  for VUL_PATH in "${VUL_PATHS[@]}"; do
+    for FIX_FILE in "${FIX_FILES[@]}"; do
+      if [[ ! -f "${VUL_PATH}${FIX_FILE}" ]]; then
+        VULNERABLE="TRUE"
+        echo "Missing \"${VUL_PATH}${FIX_FILE}\""
+      fi
+    done
+  done
+
+  echo "END: Checking if vulnerable"
+  if [[ "${VULNERABLE}" = "TRUE" ]]; then
+    echo "Vulnerable files found"
+    return 0
+  else
+    return 1
+  fi
+}
 
 fix28() {
-  BIN_DIR="${SPSS_APP_BUNDLE}/Contents/bin"
-  LIB_DIR="${SPSS_APP_BUNDLE}/Contents/bin/as-3.3.0.0/lib"
-  rm -f "${BIN_DIR}/log4j-core-2.13.3.jar" "${BIN_DIR}/log4j-api-2.13.3.jar" "${BIN_DIR}/log4j-1.2-api-2.13.3.jar"
-  rm -f "${LIB_DIR}/log4j-core-2.13.3.jar" "${LIB_DIR}/log4j-api-2.13.3.jar"
-  cp -R "${FIX_FILES}" "${BIN_DIR}"
-  cp -R "${FIX_FILES}" "${LIB_DIR}"
+  VUL_PATHS=(
+    "${SPSS_HOME}/SPSS Statistics.app/Contents/bin/"
+    "${SPSS_HOME}/SPSS Statistics.app/Contents/bin/as-3.3.0.0/lib/"
+    "${SPSS_HOME}/SPSS Statistics.app/Contents/common/ext/bin/spss.cognos.9/"
+  )
+  VUL_FILES=(
+    "${SPSS_HOME}/SPSS Statistics.app/Contents/bin/log4j-core-2.13.3.jar"
+    "${SPSS_HOME}/SPSS Statistics.app/Contents/bin/log4j-api-2.13.3.jar"
+    "${SPSS_HOME}/SPSS Statistics.app/Contents/bin/log4j-1.2-api-2.13.3.jar"
+    "${SPSS_HOME}/SPSS Statistics.app/Contents/bin/as-3.3.0.0/lib/log4j-1.2-api-2.13.3.jar"
+    "${SPSS_HOME}/SPSS Statistics.app/Contents/bin/as-3.3.0.0/lib/log4j-core-2.13.3.jar"
+    "${SPSS_HOME}/SPSS Statistics.app/Contents/bin/as-3.3.0.0/lib/log4j-api-2.13.3.jar"
+    "${SPSS_HOME}/SPSS Statistics.app/Contents/common/ext/bin/spss.cognos.9/log4j-core-2.13.3.jar"
+    "${SPSS_HOME}/SPSS Statistics.app/Contents/common/ext/bin/spss.cognos.9/log4j-api-2.13.3.jar"
+  )
 }
 
 fix27() {
-  BIN_DIR="${SPSS_APP_BUNDLE}/Contents/bin"
-  LIB_DIR="${SPSS_APP_BUNDLE}/Contents/bin/as-3.2.3.0/lib"
-  COGNOS_DIR="${SPSS_APP_BUNDLE}/Contents/common/ext/bin/spss.cognos.9"
-  rm -f "${BIN_DIR}/log4j-core-2.13.3.jar" "${BIN_DIR}/log4j-api-2.13.3.jar" "${BIN_DIR}/log4j-1.2-api-2.13.3.jar"
-  rm -f "${LIB_DIR}/log4j-core-2.13.3.jar" "${LIB_DIR}/log4j-api-2.13.3.jar"
-  rm -f "${COGNOS_DIR}/log4j-1.2.17.jar"
-  cp -R "${FIX_FILES}" "${BIN_DIR}"
-  cp -R "${FIX_FILES}" "${LIB_DIR}"
-  cp -R "${FIX_FILES}" "${COGNOS_DIR}"
+  VUL_PATHS=(
+    "${SPSS_HOME}/SPSS Statistics.app/Contents/bin/"
+    "${SPSS_HOME}/SPSS Statistics.app/Contents/bin/as-3.2.3.0/lib/"
+    "${SPSS_HOME}/SPSS Statistics.app/Contents/common/ext/bin/spss.cognos.9/"
+    "${SPSS_HOME}/SPSS Statistics.app/Contents/common/ext/bin/spss.tm1.9/"
+  )
+  VUL_FILES=(
+    "${SPSS_HOME}/SPSS Statistics.app/Contents/bin/log4j-core-2.13.3.jar"
+    "${SPSS_HOME}/SPSS Statistics.app/Contents/bin/log4j-api-2.13.3.jar"
+    "${SPSS_HOME}/SPSS Statistics.app/Contents/bin/log4j-1.2-api-2.13.3.jar"
+    "${SPSS_HOME}/SPSS Statistics.app/Contents/bin/as-3.2.3.0/lib/log4j-core-2.13.3.jar"
+    "${SPSS_HOME}/SPSS Statistics.app/Contents/bin/as-3.2.3.0/lib/log4j-api-2.13.3.jar"
+    "${SPSS_HOME}/SPSS Statistics.app/Contents/common/ext/bin/spss.cognos.9/log4j-1.2.17.jar"
+    "${SPSS_HOME}/SPSS Statistics.app/Contents/common/ext/bin/spss.tm1.9/log4j-1.2.16.jar"
+  )
 }
 
 fix26() {
-  TM1_DIR="${SPSS_APP_BUNDLE}/Contents/common/ext/bin/spss.tm1.9"
-  COGNOS_DIR="${SPSS_APP_BUNDLE}/Contents/common/ext/bin/spss.cognos.9"
-  LIB_DIR="${SPSS_APP_BUNDLE}/Contents/bin/as-3.1.1.0/lib"
-  rm -f "${TM1_DIR}/log4j-1.2.16.jar"
-  rm -f "${COGNOS_DIR}/log4j-1.2.17.jar"
-  rm -f "${LIB_DIR}/com.springsource.org.apache.log4j-1.2.16.jar"
-  cp -R "${FIX_FILES}" "${TM1_DIR}"
-  cp -R "${FIX_FILES}" "${COGNOS_DIR}"
-  cp -R "${FIX_FILES}" "${LIB_DIR}"
+  VUL_PATHS=(
+    "${SPSS_HOME}/SPSSStatistics.app/Contents/common/ext/bin/spss.tm1.9/"
+    "${SPSS_HOME}/SPSSStatistics.app/Contents/common/ext/bin/spss.cognos.9/"
+    "${SPSS_HOME}/SPSSStatistics.app/Contents/as-3.1.1.0/lib/"
+  )
+  VUL_FILES=(
+    "${SPSS_HOME}/SPSSStatistics.app/Contents/common/ext/bin/spss.tm1.9/log4j-1.2.16.jar"
+    "${SPSS_HOME}/SPSSStatistics.app/Contents/common/ext/bin/spss.cognos.9/log4j-1.2.17.jar"
+    "${SPSS_HOME}/SPSSStatistics.app/Contents/as-3.1.1.0/lib/com.springsource.org.apache.log4j-1.2.16.jar"
+  )
 }
 
 fix25() {
-  TM1_DIR="${SPSS_APP_BUNDLE}/Contents/common/ext/bin/spss.tm1.8"
-  COGNOS_DIR="${SPSS_APP_BUNDLE}/Contents/common/ext/bin/spss.cognos.8"
-  LIB_DIR="${SPSS_APP_BUNDLE}/Contents/bin/as-3.1.1.0/lib"
-  PARTY_DIR="${SPSS_APP_BUNDLE}/Contents/bin/as-3.1.0.0/3rdparty"
-  rm -f "${TM1_DIR}/log4j-1.2.16.jar"
-  rm -f "${COGNOS_DIR}/log4j-1.2.17.jar"
-  rm -f "${LIB_DIR}/com.springsource.org.apache.log4j-1.2.16.jar"
-  rm -f "${PARTY_DIR}/com.springsource.org.apache.log4j-1.2.16.jar"
-  cp -R "${FIX_FILES}" "${TM1_DIR}"
-  cp -R "${FIX_FILES}" "${COGNOS_DIR}"
-  cp -R "${FIX_FILES}" "${LIB_DIR}"
-  cp -R "${FIX_FILES}" "${PARTY_DIR}"
+  VUL_PATHS=(
+    "${SPSS_HOME}/SPSSStatistics.app/Contents/bin/"
+    "${SPSS_HOME}/SPSSStatistics.app/Contents/common/ext/bin/spss.tm1.8/"
+    "${SPSS_HOME}/SPSSStatistics.app/Contents/common/ext/bin/spss.cognos.8/"
+    "${SPSS_HOME}/SPSSStatistics.app/Contents/as-3.1.0.0/lib/"
+    "${SPSS_HOME}/SPSSStatistics.app/Contents/as-3.1.0.0/3rdparty/"
+  )
+  VUL_FILES=(
+    "${SPSS_HOME}/SPSSStatistics.app/Contents/bin/log4j-1.2.16.jar"
+    "${SPSS_HOME}/SPSSStatistics.app/Contents/common/ext/bin/spss.tm1.8/log4j-1.2.16.jar"
+    "${SPSS_HOME}/SPSSStatistics.app/Contents/common/ext/bin/spss.cognos.8/log4j-1.2.17.jar"
+    "${SPSS_HOME}/SPSSStatistics.app/Contents/as-3.1.0.0/lib/com.springsource.org.apache.log4j-1.2.16.jar"
+    "${SPSS_HOME}/SPSSStatistics.app/Contents/as-3.1.0.0/3rdparty/com.springsource.org.apache.log4j-1.2.16.jar"
+  )
 }
 
-case "${SPSS_MAJOR_VERSION}" in
-  28.0.1*)
-    fix28
-    ;;
-  27.0.1*)
-    fix27
-    ;;
-  26.0*)
-    fix26
-    ;;
-  25.0*)
-    fix25
-    ;;
-  *)
-    ;;
-esac
+
+# Apply Fix
+setup_logging
+trap cleanup EXIT
+
+SPSS_APP_BUNDLES=$(find -E /Applications -regex ".*/SPSS ?Statistics\.app")
+for SPSS_APP_BUNDLE in "${SPSS_APP_BUNDLES[@]}"; do
+
+  echo "SPSS found at \"${SPSS_APP_BUNDLE}\""
+  SPSS_HOME=$(dirname "${SPSS_APP_BUNDLE}")
+  SPSS_VERSION=$(xmllint --xpath "/plist/dict/key[text()='CFBundleVersion']/following-sibling::string[1]/text()" "${SPSS_APP_BUNDLE}/Contents/Info.plist" | tr -d " ")
+  echo "SPSS Home: ${SPSS_HOME}"
+  echo "SPSS Version: ${SPSS_VERSION}"
+
+  case "${SPSS_VERSION}" in
+    28.0.1*)
+      fix28
+      ;;
+    27.0.1*)
+      fix27
+      ;;
+    26.0*)
+      fix26
+      ;;
+    25.0*)
+      fix25
+      ;;
+    *)
+      ;;
+  esac
+
+  if ! vulnerable; then
+    echo "\"${SPSS_APP_BUNDLE}\" is not vulnerable. Have you already applied the fix?"
+  else
+    echo "\"${SPSS_APP_BUNDLE}\" is vulnerable. Applying fix."
+    if old_fix_present; then
+      remove_previous_fix
+    fi
+
+    remove_vulnerable_files
+    copy_fix_files
+
+    if vulnerable; then
+      echo "Fix Failed! : \"${SPSS_APP_BUNDLE}\""
+      exit 1
+    else
+      echo "Fix Success! \"${SPSS_APP_BUNDLE}\""
+    fi
+  fi
+done
 
 exit 0
