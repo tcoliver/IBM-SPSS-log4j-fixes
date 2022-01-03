@@ -26,6 +26,6 @@
 	<key>suppress_bundle_relocation</key>
 	<true/>
 	<key>version</key>
-	<string>2.0</string>
+	<string>3.0</string>
 </dict>
 </plist>

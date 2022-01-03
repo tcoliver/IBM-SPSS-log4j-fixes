@@ -4,14 +4,17 @@ LOG_FILE="/Library/Logs/install_ibm_spss_statistics_log4j_fix.log"
 TEMP_DIR="/tmp/spss_fix_log4j"
 FIX_FILE_DIR="${TEMP_DIR}/fix_files/"
 FIX_FILES=(
+  "log4j-1.2-api-2.17.0.jar"
+  "log4j-api-2.17.0.jar"
+  "log4j-core-2.17.0.jar"
+)
+OLD_FIX_FILES=(
+  "log4j-1.2-api-2.15.0.jar"
+  "log4j-api-2.15.0.jar"
+  "log4j-core-2.15.0.jar"
   "log4j-1.2-api-2.16.0.jar"
   "log4j-api-2.16.0.jar"
   "log4j-core-2.16.0.jar"
-)
-OLD_FIX_FILES=(
-      "log4j-1.2-api-2.15.0.jar"
-      "log4j-api-2.15.0.jar"
-      "log4j-core-2.15.0.jar"
 )
 
 function setup_logging() {
@@ -74,6 +77,27 @@ copy_fix_files() {
   echo "END: Copying fix files"
 }
 
+fix_present() {
+  local FIX_PRESENT="TRUE"
+  echo "BEGIN: Checking for fix files"
+  for VUL_PATH in "${VUL_PATHS[@]}"; do
+    for FIX_FILE in "${FIX_FILES[@]}"; do
+      if [[ ! -f "${VUL_PATH}${FIX_FILE}" ]]; then
+        FIX_PRESENT="FALSE"
+        echo "Missing \"${VUL_PATH}${FIX_FILE}\""
+      fi
+    done
+  done
+  echo "END: Checking for fix files"
+  if [[ "${FIX_PRESENT}" = "TRUE" ]]; then
+    echo "Result: All fix files found"
+    return 0
+  else
+    echo "Result: Missing fix files"
+    return 1
+  fi
+}
+
 old_fix_present() {
   local OLD_FIX_FOUND="FALSE"
   echo "BEGIN: Checking for old fix files"
@@ -87,9 +111,29 @@ old_fix_present() {
   done
   echo "END: Checking for old fix files"
   if [[ "${OLD_FIX_FOUND}" = "TRUE" ]]; then
-    echo "Old fix files found"
+    echo "Result: Old fix files found"
     return 0
   else
+    echo "Result: No old fix files found"
+    return 1
+  fi
+}
+
+vulnerable_files_present(){
+  local VUL_FILE_FOUND="FALSE"
+  echo "BEGIN: Checking for vulnerable files"
+  for VUL_FILE in "${VUL_FILES[@]}"; do
+    if [[ -f "${VUL_FILE}" ]]; then
+      VUL_FILE_FOUND="TRUE"
+      echo "Found \"${VUL_FILE}\""
+    fi
+  done
+  echo "END: Checking for vulnerable files"
+  if [[ "${VUL_FILE_FOUND}" = "TRUE" ]]; then
+    echo "Result: vulnerable files found"
+    return 0
+  else
+    echo "Result: No vulnerable files found"
     return 1
   fi
 }
@@ -97,25 +141,20 @@ old_fix_present() {
 vulnerable() {
   local VULNERABLE="FALSE"
   echo "BEGIN: Checking if vulnerable"
-  for VUL_FILE in "${VUL_FILES[@]}"; do
-    if [[ -f "${VUL_FILE}" ]]; then
-      VULNERABLE="TRUE"
-      echo "Found \"${VUL_FILE}\""
-    fi
-  done
+  if vulnerable_files_present; then
+    VULNERABLE="TRUE"
+  fi
 
-  for VUL_PATH in "${VUL_PATHS[@]}"; do
-    for FIX_FILE in "${FIX_FILES[@]}"; do
-      if [[ ! -f "${VUL_PATH}${FIX_FILE}" ]]; then
-        VULNERABLE="TRUE"
-        echo "Missing \"${VUL_PATH}${FIX_FILE}\""
-      fi
-    done
-  done
+  if ! fix_present; then
+    VULNERABLE="TRUE"
+  fi
+
+  if old_fix_present; then
+    VULNERABLE="TRUE"
+  fi
 
   echo "END: Checking if vulnerable"
   if [[ "${VULNERABLE}" = "TRUE" ]]; then
-    echo "Vulnerable files found"
     return 0
   else
     return 1
@@ -220,21 +259,18 @@ for SPSS_APP_BUNDLE in "${SPSS_APP_BUNDLES[@]}"; do
   esac
 
   if ! vulnerable; then
-    echo "\"${SPSS_APP_BUNDLE}\" is not vulnerable. Have you already applied the fix?"
+    echo "Result: \"${SPSS_APP_BUNDLE}\" is not vulnerable. Have you already applied the fix?"
   else
-    echo "\"${SPSS_APP_BUNDLE}\" is vulnerable. Applying fix."
-    if old_fix_present; then
-      remove_previous_fix
-    fi
-
+    echo "Result: \"${SPSS_APP_BUNDLE}\" is vulnerable. Applying fix."
+    remove_previous_fix
     remove_vulnerable_files
     copy_fix_files
 
     if vulnerable; then
-      echo "Fix Failed! : \"${SPSS_APP_BUNDLE}\""
+      echo "Result: Fix Failed!"
       exit 1
     else
-      echo "Fix Success! \"${SPSS_APP_BUNDLE}\""
+      echo "Result: Fix Success!"
     fi
   fi
 done
