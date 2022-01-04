@@ -232,7 +232,7 @@ fix25() {
 setup_logging
 trap cleanup EXIT
 
-SPSS_APP_BUNDLES=$(find -E /Applications -regex ".*/SPSS ?Statistics\.app")
+SPSS_APP_BUNDLES=$(find -E /Applications -regex ".*/SPSS ?Statistics\.app" -maxdepth 3)
 for SPSS_APP_BUNDLE in "${SPSS_APP_BUNDLES[@]}"; do
 
   echo "SPSS found at \"${SPSS_APP_BUNDLE}\""
