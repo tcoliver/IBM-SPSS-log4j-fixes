@@ -1,0 +1,19 @@
+.	40755	0/0
+./tmp	40755	0/0
+./tmp/spss_fix_log4j	40755	0/0
+./tmp/spss_fix_log4j/fix_files	40755	0/0
+./tmp/spss_fix_log4j/fix_files/._log4j-1.2-api-2.17.0.jar	100664	0/0	0	0
+./tmp/spss_fix_log4j/fix_files/._log4j-api-2.17.0.jar	100664	0/0	0	0
+./tmp/spss_fix_log4j/fix_files/._log4j-core-2.17.0.jar	100664	0/0	0	0
+./tmp/spss_fix_log4j/fix_files/log4j-1.2-api-2.17.0.jar	100664	0/0	208235	2140554197
+./tmp/spss_fix_log4j/fix_files/log4j-api-2.17.0.jar	100664	0/0	301776	3250691420
+./tmp/spss_fix_log4j/fix_files/log4j-core-2.17.0.jar	100664	0/0	1789339	553860104
+./tmp/spss_fix_log4j/readme	40755	0/0
+./tmp/spss_fix_log4j/readme/._Readme_25.0.0.2-16.txt	100664	0/0	0	0
+./tmp/spss_fix_log4j/readme/._Readme_26.0.0.1-16.txt	100664	0/0	0	0
+./tmp/spss_fix_log4j/readme/._Readme_27.0.1.0-22.txt	100664	0/0	0	0
+./tmp/spss_fix_log4j/readme/._Readme_28.0.1.0-7.txt	100664	0/0	0	0
+./tmp/spss_fix_log4j/readme/Readme_25.0.0.2-16.txt	100664	0/0	3170	1425604641
+./tmp/spss_fix_log4j/readme/Readme_26.0.0.1-16.txt	100664	0/0	2740	3876400104
+./tmp/spss_fix_log4j/readme/Readme_27.0.1.0-22.txt	100664	0/0	3113	3596531288
+./tmp/spss_fix_log4j/readme/Readme_28.0.1.0-7.txt	100664	0/0	3086	3758446209
