@@ -13,13 +13,13 @@ Installation instructions
 Platforms affected:	ALL
 
 2. The related defect id(s):
-#5282 Upgrade Log4j to 2.17.0 because high security risk 
+#5282 Upgrade Log4j to 2.17.1 because high security risk 
 
 3. Affected Files: 
 The attached interim fix zip file contains the following:
-	log4j-core-2.17.0.jar
-	log4j-api-2.17.0.jar
-	log4j-1.2-api-2.17.0.jar
+	log4j-core-2.17.1.jar
+	log4j-api-2.17.1.jar
+	log4j-1.2-api-2.17.1.jar
 	readme.txt (this file) 
 
 4. How to apply the hot fix: 
@@ -33,7 +33,7 @@ The attached interim fix zip file contains the following:
 			$SPSS_HOME/as-3.2.3.0/lib/log4j-core-2.13.3.jar
 			$SPSS_HOME/as-3.2.3.0/lib/log4j-api-2.13.3.jar
 			$SPSS_HOME/common/ext/bin/spss.cognos.9/log4j-1.2.17.jar
-		(4) Copy the interim fix files (log4j-core-2.17.0.jar, log4j-api-2.17.0.jar, log4j-1.2-api-2.17.0.jar) to these locations:
+		(4) Copy the interim fix files (log4j-core-2.17.1.jar, log4j-api-2.17.1.jar, log4j-1.2-api-2.17.1.jar) to these locations:
 			$SPSS_HOME/
 			$SPSS_HOME/as-3.2.3.0/lib/
 			$SPSS_HOME/common/ext/bin/spss.cognos.9/
@@ -49,7 +49,7 @@ The attached interim fix zip file contains the following:
 			$SPSS_HOME/SPSS Statistics.app/Contents/bin/as-3.2.3.0/lib/log4j-api-2.13.3.jar
 			$SPSS_HOME/SPSS Statistics.app/Contents/common/ext/bin/spss.cognos.9/log4j-1.2.17.jar
 			$SPSS_HOME/SPSS Statistics.app/Contents/common/ext/bin/spss.tm1.9/log4j-1.2.16.jar
-		(4) Copy the interim fix files (log4j-core-2.17.0.jar, log4j-api-2.17.0.jar, log4j-1.2-api-2.17.0.jar) to these locations:
+		(4) Copy the interim fix files (log4j-core-2.17.1.jar, log4j-api-2.17.1.jar, log4j-1.2-api-2.17.1.jar) to these locations:
 			$SPSS_HOME/SPSS Statistics.app/Contents/bin/
 			$SPSS_HOME/SPSS Statistics.app/Contents/bin/as-3.2.3.0/lib/
 			$SPSS_HOME/SPSS Statistics.app/Contents/common/ext/bin/spss.cognos.9/
